@@ -24,8 +24,11 @@ class TSEDSearch():
             corpus: Dict[str, Dict[str, str]], 
             queries: Dict[str, str], 
             top_k: int, 
-            db_pl: str, 
-            query_pl: str,
+            corpus_pl: str, 
+            queries_pl: str,
+            # ====================================================================
+            part: int = None,
+            # ====================================================================
     ) -> Dict[str, Dict[str, float]]:
         
         results = dict()
@@ -33,30 +36,39 @@ class TSEDSearch():
         corpus_ids = list(corpus.keys())
         corpus_texts = [corpus[cid]["text"] for cid in corpus_ids]
 
-        #query_ids = list(queries.keys())
-        #query_texts = [queries[qid] for qid in query_ids]
+        query_ids = list(queries.keys())
+        query_texts = [queries[qid] for qid in query_ids]
+        
+        # ====================================================================
+        # partition queries
+        if part is not None:
+            query_texts = query_texts[part*30:(part+1)*30]
+        # ====================================================================       
+        
+        (
+            score_list,
+            indices_list,
+        ) = self.retrieval(
+            corpus_pl=corpus_pl,
+            queries_pl=queries_pl,
+            corpus_texts=corpus_texts,
+            query_texts=query_texts,
+            top_k=top_k,
+        )
+        
 
-        for query_id, query_code in tqdm.tqdm(queries.items(), total=len(queries), desc="Searching"):
-            (
-                scores_src,
-                indices_src,
-            ) = self.retrieval(
-                pl1=db_pl,
-                pl2=query_pl,
-                code_db=corpus_texts,
-                query=query_code,
-            )
-
-            # Get top-k values
-            scores_src = scores_src[:top_k]
-            indices_src = indices_src[:top_k]
+        for scores_src, indices_src in zip(score_list, indices_list):
             scores = {}
             for (corpus_id, score) in zip(
-                [corpus_ids[idx] for idx in indices_src],
-                scores_src,
+                [corpus_ids[idx] for idx in indices_src][:top_k],
+                scores_src[:top_k],
             ):
                 scores[corpus_id] = float(score)
-                
-            results[query_id] = scores
+            #===================================================================
+            if part is not None:
+                results[list(queries.keys())[len(results) + part*30]] = scores
+            else:
+                results[list(queries.keys())[len(results)]] = scores
+            #===================================================================
 
         return results

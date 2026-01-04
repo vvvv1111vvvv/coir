@@ -11,7 +11,7 @@ from transformers import AutoTokenizer
 def sleep(seconds):
     if seconds: time.sleep(seconds) 
 
-class BM25Search():
+class TFIDFSearch():
     def __init__(
         self,
         retrieval = None,

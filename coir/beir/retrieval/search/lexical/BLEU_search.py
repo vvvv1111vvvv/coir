@@ -11,7 +11,7 @@ from transformers import AutoTokenizer
 def sleep(seconds):
     if seconds: time.sleep(seconds) 
 
-class BM25Search():
+class BLEUSearch():
     def __init__(
         self,
         retrieval = None,
@@ -26,8 +26,8 @@ class BM25Search():
             self, 
             corpus: Dict[str, Dict[str, str]], 
             queries: Dict[str, str], 
+            pl: str,
             top_k: int, 
-            tokenizer_name: str,
     ) -> Dict[str, Dict[str, float]]:
         
         results = dict()
@@ -38,17 +38,17 @@ class BM25Search():
         query_ids = list(queries.keys())
         query_texts = [queries[qid] for qid in query_ids]
 
-
         (
             score_list,
             indices_list,
         ) = self.retrieval(
-            tokenizer_name=tokenizer_name,
             corpus_texts=corpus_texts,
             query_texts=query_texts,
+            pl=pl,
             top_k=top_k,
         )
-
+        
+        
         for scores_src, indices_src in zip(score_list, indices_list):
             scores = {}
             for (corpus_id, score) in zip(
@@ -59,3 +59,4 @@ class BM25Search():
             results[list(queries.keys())[len(results)]] = scores
 
         return results
+    
